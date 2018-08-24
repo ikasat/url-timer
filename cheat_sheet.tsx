@@ -28,7 +28,7 @@ function nullablify<T, R>(f: (x: T) => R): (x: T | undefined) => R | undefined {
 }
 const decodeURIComponentIfNotNull = nullablify(decodeURIComponent);
 const timeStringToTimestamp = (s: string): number | undefined => {
-  const m = moment(s, [moment.ISO_8601, "MM-DD HH:mm", "HH:mm", "X"]);
+  const m = moment(s, [moment.ISO_8601, "HH:mm", "X"]);
   const timestamp = parseInt(s);
   if (m.isValid()) {
     return m.unix();
@@ -197,7 +197,7 @@ const TimerComponent = (props: Props) => {
             <button onClick={handleSubmit(onSubmit)}>Create New Timer</button>
           </li>
           <li>
-            <ReactRouterDOM.Link to={baseURLPath}>Reset</ReactRouterDOM.Link>
+            <ReactRouterDOM.Link to="/">Reset</ReactRouterDOM.Link>
           </li>
         </ul>
       </form>
@@ -230,9 +230,15 @@ const generateTicker = (handler: () => void, interval: number) => {
 const ticker = generateTicker(() => { store.dispatch(changeNowTimestamp(moment().unix())) }, 500);
 
 // URL が変更された場合の挙動
-const onRoute = (props: Props) => {
-  props.onChangeTargetTimeString(decodeURIComponentIfNotNull(props.match.params.targetTimeString));
-}
+const onRoute = Reselect.createSelector(
+  [
+    (props: Props) => props.onChangeTargetTimeString,
+    (props: Props) => props.match.params.targetTimeString
+  ],
+  (onChangeTargetTimeString, targetTimeString) => {
+    onChangeTargetTimeString(decodeURIComponentIfNotNull(targetTimeString));
+  }
+);
 
 // Container
 const TimerContainer = Redux.compose<() => JSX.Element>(
