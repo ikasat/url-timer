@@ -28,7 +28,7 @@ const baseURLPath = "/url-timer/";
 const defaultString = (s: string | null | undefined, defaultS: string = "") => (s == null ? defaultS : s);
 const isBlank = (s: string | null | undefined) => s == null || s === "";
 const timeStringToTimestamp = (s: string): number | undefined => {
-  const m = moment(s, [moment.ISO_8601, "HH:mm", "X"]);
+  const m = moment(s, [moment.ISO_8601, "X"]);
   return m.isValid() ? m.unix() : void 0;
 };
 
@@ -246,10 +246,11 @@ const nowTimestampTicker = generateTicker(() => {
 // URL が変更された場合の挙動
 const onRoute = Reselect.createSelector([(props: Props) => props.match.params.targetTimeString], targetTimeString => {
   if (targetTimeString != null) {
+    const decodedTargetTimeString = decodeURIComponent(targetTimeString);
     store.dispatch(
       changeTargetTime({
-        string: decodeURIComponent(targetTimeString),
-        timestamp: timeStringToTimestamp(targetTimeString)
+        string: decodedTargetTimeString,
+        timestamp: timeStringToTimestamp(decodedTargetTimeString)
       })
     );
   } else {
