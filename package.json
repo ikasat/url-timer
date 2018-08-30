@@ -1,6 +1,9 @@
 {
   "author": "ikasat",
   "license": "Apache-2.0",
+  "scripts": {
+    "start": "parcel --public-url /url-timer/ index.html"
+  },
   "dependencies": {
     "connected-react-router": "^4.4.1",
     "history": "^4.7.2",
