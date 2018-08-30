@@ -2,7 +2,8 @@
   "author": "ikasat",
   "license": "Apache-2.0",
   "scripts": {
-    "start": "parcel --public-url /url-timer/ index.html"
+    "start": "parcel --public-url /url-timer/ index.html",
+    "tsc": "tsc --build tsconfig.json"
   },
   "dependencies": {
     "connected-react-router": "^4.4.1",
