@@ -20,6 +20,7 @@ momentDurationFormat(moment);
 
 // ■ 環境設定
 
+// parcel の--public-url の指定に合わせる
 const baseURLPath = "/url-timer/";
 
 // ■ ユーティリティ関数
@@ -236,7 +237,8 @@ const generateTicker = (handler: () => void, interval: number) => {
     }
   };
 };
-// 0.5s 毎に changeNowTimestamp Action を発行するタイマー
+
+// 0.5 s 毎に changeNowTimestamp Action を発行するタイマー
 const nowTimestampTicker = generateTicker(() => {
   store.dispatch(changeNowTimestamp(moment().unix()));
 }, 500);
@@ -244,12 +246,18 @@ const nowTimestampTicker = generateTicker(() => {
 // URL が変更された場合の挙動
 const onRoute = Reselect.createSelector([(props: Props) => props.match.params.targetTimeString], targetTimeString => {
   if (targetTimeString != null) {
-    store.dispatch(changeTargetTime({ string: targetTimeString, timestamp: timeStringToTimestamp(targetTimeString) }));
+    store.dispatch(
+      changeTargetTime({
+        string: decodeURIComponent(targetTimeString),
+        timestamp: timeStringToTimestamp(targetTimeString)
+      })
+    );
   } else {
     store.dispatch(changeTargetTime({ string: undefined, timestamp: undefined }));
   }
 });
 
+// 本当はいくつかの Component / Container に分割すべき
 const TimerContainer = Redux.compose<() => JSX.Element>(
   ReactRedux.connect(
     mapStateToProps,
