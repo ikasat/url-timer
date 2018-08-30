@@ -113,7 +113,6 @@ interface StateProps {
 // mapDispatchToProps が生成する Props
 interface DispatchProps {
   onSubmit(formData: FormData): void;
-  onChangeTargetTimeString(targetTimeString: string | undefined): void;
 }
 
 // mergeProps（あれば）が生成する Props
@@ -213,13 +212,6 @@ const mapDispatchToProps = (dispatch: Redux.Dispatch): DispatchProps => ({
   onSubmit({ targetTimeString: maybeTargetTimeString }: FormData) {
     const targetTimeString = defaultString(maybeTargetTimeString);
     dispatch(ConnectedReactRouter.push(encodeURIComponent(targetTimeString)));
-  },
-  onChangeTargetTimeString(targetTimeString: string | undefined) {
-    if (targetTimeString != null) {
-      dispatch(changeTargetTime({ string: targetTimeString, timestamp: timeStringToTimestamp(targetTimeString) }));
-    } else {
-      dispatch(changeTargetTime({ string: undefined, timestamp: undefined }));
-    }
   }
 });
 
@@ -250,12 +242,13 @@ const nowTimestampTicker = generateTicker(() => {
 }, 500);
 
 // URL が変更された場合の挙動
-const onRoute = Reselect.createSelector(
-  [(props: Props) => props.onChangeTargetTimeString, (props: Props) => props.match.params.targetTimeString],
-  (onChangeTargetTimeString, targetTimeString) => {
-    onChangeTargetTimeString(targetTimeString != null ? decodeURIComponent(targetTimeString) : void 0);
+const onRoute = Reselect.createSelector([(props: Props) => props.match.params.targetTimeString], targetTimeString => {
+  if (targetTimeString != null) {
+    store.dispatch(changeTargetTime({ string: targetTimeString, timestamp: timeStringToTimestamp(targetTimeString) }));
+  } else {
+    store.dispatch(changeTargetTime({ string: undefined, timestamp: undefined }));
   }
-);
+});
 
 const TimerContainer = Redux.compose<() => JSX.Element>(
   ReactRedux.connect(
