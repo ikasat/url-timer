@@ -31,6 +31,8 @@ const getNow = () => Math.floor(Date.now() / 1000) * 1000;
 
 type TimerState = {
   nowTimestamp: number;
+  notificationEnabled?: boolean;
+  notificationPermission?: NotificationPermission;
 };
 const initialTimerState: TimerState = {
   nowTimestamp: getNow()
@@ -45,13 +47,27 @@ type State = {
 // ■ Actions
 
 const actionCreator = TypeScriptFSA.actionCreatorFactory("timer");
-const changeNowTimestamp = actionCreator<number>("CHANGE_NOW_TIMESTAMP");
+const setNowTimestamp = actionCreator<number>("SET_NOW_TIMESTAMP");
+const setNotificationEnabled = actionCreator<boolean>("SET_NOTIFICATION_ENABLED");
+const requestNotificationPermission = actionCreator.async<undefined, NotificationPermission>(
+  "REQUEST_NOTIFICATION_PERMISSION"
+);
 
 // ■ Reducers
 
 const timerReducer = TypeScriptFSAReducers.reducerWithInitialState(initialTimerState)
-  .case(changeNowTimestamp, (timerState, payload) => ({ ...timerState, nowTimestamp: payload }))
+  .case(setNowTimestamp, (state, payload) => ({ ...state, nowTimestamp: payload }))
+  .case(setNotificationEnabled, (state, payload) => ({ ...state, notificationEnabled: payload }))
+  .case(requestNotificationPermission.done, (state, payload) => ({
+    ...state,
+    notificationPermission: payload.result
+  }))
   .build();
+
+const doRequestNotificationPermission = async (dispatch: Redux.Dispatch) => {
+  const perm = await Notification.requestPermission();
+  dispatch(requestNotificationPermission.done({ result: perm }));
+};
 
 const reducer = Redux.combineReducers({
   timer: timerReducer,
@@ -122,29 +138,35 @@ const TimerFormContainer = Recompose.compose<TimerFormProps, {}>(
 // TimerViewComponent / Container
 
 type TimerViewPathParams = {
-  targetTimestamp?: string; // URL (Path) から取得するパラメータ (react-router)
+  targetTimeString: string; // URL (Path) から取得するパラメータ (react-router)
 };
 type TimerViewInjectedRouterProps = ReactRouter.RouteComponentProps<TimerViewPathParams>;
 type TimerViewOwnProps = TimerViewInjectedRouterProps;
 type TimerViewStateProps = {
   nowTimestamp: number;
+  notificationEnabled?: boolean;
+  notificationPermission?: NotificationPermission;
 };
 type TimerViewDispatchProps = {
+  dispatch: Redux.Dispatch;
+};
+type TimerViewComputedProps = {
+  targetTimestamp: number;
+  targetTimeString: string;
+  duration: number;
   onTick(): void;
 };
-type TimerViewMergedProps = TimerViewOwnProps & TimerViewStateProps & TimerViewDispatchProps;
+type TimerViewMergedProps = TimerViewOwnProps & TimerViewStateProps & TimerViewDispatchProps & TimerViewComputedProps;
 type TimerViewInjectedStateProps = Recompose.stateProps<number | undefined, "timerId", "setTimerId">;
 type TimerViewProps = TimerViewMergedProps & TimerViewInjectedStateProps;
 
-const TimerViewComponent = ({ nowTimestamp, match }: TimerViewProps) => {
-  const targetTimestamp = +(match.params.targetTimestamp || "") * 1000;
+const TimerViewComponent = ({ targetTimestamp, duration, targetTimeString }: TimerViewProps) => {
   if (isNaN(targetTimestamp)) {
     return <ReactRouterDOM.Link to="/">Reset</ReactRouterDOM.Link>;
   }
-  const duration = targetTimestamp - nowTimestamp;
   return (
     <div style={{ textAlign: "center" }}>
-      <h1>{convertTimestampToString(targetTimestamp)}</h1>
+      <h1>{targetTimeString}</h1>
       <h2>
         {convertDurationToString(duration)}
         <span style={{ fontSize: "80%" }}>{duration >= 0 ? " (left)" : " (ago)"}</span>
@@ -159,19 +181,47 @@ const TimerViewComponent = ({ nowTimestamp, match }: TimerViewProps) => {
 const TimerViewContainer = Recompose.compose<TimerViewProps, {}>(
   ReactRouterDOM.withRouter,
   ReactRedux.connect(
-    ({ timer: { nowTimestamp } }: State): TimerViewStateProps => ({ nowTimestamp }),
+    ({ timer: { nowTimestamp, notificationEnabled, notificationPermission } }: State): TimerViewStateProps => ({
+      nowTimestamp,
+      notificationEnabled,
+      notificationPermission
+    }),
     (dispatch: Redux.Dispatch): TimerViewDispatchProps => ({
-      onTick() {
-        dispatch(changeNowTimestamp(getNow()));
-      }
-    })
+      dispatch
+    }),
+    (stateProps, { dispatch }, ownProps: TimerViewOwnProps): TimerViewMergedProps => {
+      const { nowTimestamp, notificationEnabled, notificationPermission } = stateProps;
+      const targetTimestamp = convertStringToTimestamp(ownProps.match.params.targetTimeString);
+      const targetTimeString = convertTimestampToString(targetTimestamp);
+      const duration = targetTimestamp - nowTimestamp;
+      return {
+        ...stateProps,
+        dispatch,
+        ...ownProps,
+        targetTimestamp,
+        targetTimeString,
+        duration,
+        onTick() {
+          const now = getNow();
+          if (notificationEnabled && now >= targetTimestamp) {
+            if (notificationPermission === "granted") {
+              const _notif = new Notification(targetTimeString);
+            }
+            dispatch(setNotificationEnabled(false));
+          }
+          dispatch(setNowTimestamp(now));
+        }
+      };
+    }
   ),
   Recompose.withState("timerId", "setTimerId", void 0),
   Recompose.lifecycle<TimerViewProps, {}>({
     componentDidMount() {
-      const { onTick, setTimerId } = this.props;
+      const { onTick, setTimerId, dispatch, targetTimestamp } = this.props;
       setTimerId(window.setInterval(onTick, 500));
       onTick();
+      dispatch(setNotificationEnabled(targetTimestamp > getNow()));
+      doRequestNotificationPermission(dispatch);
     },
     componentWillUnmount() {
       clearInterval(this.props.timerId);
@@ -186,10 +236,7 @@ const App = () => (
     <ConnectedReactRouter.ConnectedRouter history={browserHistory}>
       <ReactRouter.Switch>
         <ReactRouter.Route path="/" exact={true} component={TimerFormContainer} />
-        <ReactRouter.Route path="/:targetTimestamp" component={TimerViewContainer} />
-        <ReactRouter.Route>
-          <p>Not found.</p>
-        </ReactRouter.Route>
+        <ReactRouter.Route path="/:targetTimeString" component={TimerViewContainer} />
       </ReactRouter.Switch>
     </ConnectedReactRouter.ConnectedRouter>
   </ReactRedux.Provider>
