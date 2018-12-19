@@ -1,5 +1,8 @@
 {
-    "extends": ["tslint-config-prettier"],
+    "extends": [
+        "tslint-react",
+        "tslint-config-prettier"
+    ],
     "rules": {
         "ban": false,
         "class-name": true,
@@ -10,16 +13,19 @@
         "curly": true,
         "eofline": false,
         "forin": true,
-        "interface-name": [true, "never-prefix"],
+        "interface-name": [
+            true,
+            "never-prefix"
+        ],
         "jsdoc-format": true,
         "jsx-no-lambda": false,
         "jsx-no-multiline-js": false,
         "label-position": true,
         "member-ordering": [
             true,
-            "public-before-private",
-            "static-before-instance",
-            "variables-before-functions"
+            {
+                "order": "fields-first"
+            }
         ],
         "no-any": true,
         "no-arg": true,
@@ -48,21 +54,34 @@
         "prettier": [
             true,
             {
-                "printWidth": 120
+                "printWidth": 120,
+                "singleQuote": true,
+                "semi": false
             }
         ],
         "radix": true,
         "switch-default": true,
-
-        "trailing-comma": [false],
-
-        "triple-equals": [ true, "allow-null-check" ],
+        "trailing-comma": [
+            false
+        ],
+        "triple-equals": [
+            true,
+            "allow-null-check"
+        ],
         "typedef": [
             true,
             "parameter",
             "property-declaration"
         ],
-        "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-pascal-case"]
+        "variable-name": [
+            true,
+            "ban-keywords",
+            "check-format",
+            "allow-leading-underscore",
+            "allow-pascal-case"
+        ]
     },
-    "rulesDirectory": ["tslint-plugin-prettier"]
+    "rulesDirectory": [
+        "tslint-plugin-prettier"
+    ]
 }
