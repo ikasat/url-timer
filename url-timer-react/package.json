@@ -1,0 +1,42 @@
+{
+    "name": "url-timer-react",
+    "author": "ikasat",
+    "license": "Apache-2.0",
+    "scripts": {
+        "start": "parcel serve --public-url /url-timer/ src/index.html",
+        "build": "parcel build --public-url /url-timer/ src/index.html",
+        "tsc": "tsc --build tsconfig.json"
+    },
+    "dependencies": {
+        "connected-react-router": "^6.0.0",
+        "formik": "^1.4.1",
+        "history": "^4.7.2",
+        "luxon": "^1.8.2",
+        "react": "^16.7.0-alpha.2",
+        "react-dom": "^16.7.0-alpha.2",
+        "react-redux": "^6.0.0",
+        "react-router": "^4.3.1",
+        "react-router-dom": "^4.3.1",
+        "recompose": "^0.30.0",
+        "redux": "^4.0.1",
+        "typescript-fsa": "^3.0.0-beta-2",
+        "typescript-fsa-reducers": "^1.1.0"
+    },
+    "devDependencies": {
+        "@types/history": "^4.7.2",
+        "@types/luxon": "^1.4.1",
+        "@types/react": "^16.7.17",
+        "@types/react-dom": "^16.0.11",
+        "@types/react-redux": "^6.0.11",
+        "@types/react-router": "^4.4.3",
+        "@types/react-router-dom": "^4.3.1",
+        "@types/recompose": "^0.30.2",
+        "parcel-bundler": "^1.10.3",
+        "prettier": "^1.15.3",
+        "tslint": "^5.11.0",
+        "tslint-config-prettier": "^1.17.0",
+        "tslint-plugin-prettier": "^2.0.1",
+        "tslint-react": "^3.6.0",
+        "typescript": "^3.2.2"
+    }
+}

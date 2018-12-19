@@ -1,25 +1,25 @@
+// ## import
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as Redux from "redux";
 import * as ReactRedux from "react-redux";
-import * as ReduxForm from "redux-form";
 import * as ReactRouter from "react-router";
 import * as ReactRouterDOM from "react-router-dom";
 import * as ConnectedReactRouter from "connected-react-router";
 import * as TypeScriptFSA from "typescript-fsa";
 import * as TypeScriptFSAReducers from "typescript-fsa-reducers";
 import * as Recompose from "recompose";
+import * as Formik from "formik";
 import * as History from "history";
 import * as luxon from "luxon";
 
-// ■ 環境設定
+// ## Utilities
 
 const baseURLPath = "/url-timer/";
 
-// ■ ユーティリティ関数
-
 const convertStringToTimestamp = (s: string) =>
-  s.match(/^[1-9][0-9]*$/) != null ? +s * 1000 : luxon.DateTime.fromISO(s).toMillis();
+  s.match(/^\d+$/) != null ? +s * 1000 : luxon.DateTime.fromISO(s).toMillis();
 const convertTimestampToString = (ts: number) => luxon.DateTime.fromMillis(ts).toISO();
 const convertDurationToString = (d: number) =>
   luxon.Duration.fromMillis(Math.abs(d))
@@ -27,7 +27,9 @@ const convertDurationToString = (d: number) =>
     .toISO();
 const getNow = () => Math.floor(Date.now() / 1000) * 1000;
 
-// ■ State
+// ## States
+
+// ### TimerState
 
 type TimerState = {
   nowTimestamp: number;
@@ -38,13 +40,16 @@ const initialTimerState: TimerState = {
   nowTimestamp: getNow()
 };
 
+// ### Root State
+
 type State = {
   timer: TimerState;
-  form: ReduxForm.FormStateMap;
   router: ConnectedReactRouter.RouterState;
 };
 
-// ■ Actions
+// ## Modules
+
+// ### Actions
 
 const actionCreator = TypeScriptFSA.actionCreatorFactory("timer");
 const setNowTimestamp = actionCreator<number>("SET_NOW_TIMESTAMP");
@@ -53,7 +58,7 @@ const requestNotificationPermission = actionCreator.async<undefined, Notificatio
   "REQUEST_NOTIFICATION_PERMISSION"
 );
 
-// ■ Reducers
+// ### Reducers
 
 const timerReducer = TypeScriptFSAReducers.reducerWithInitialState(initialTimerState)
   .case(setNowTimestamp, (state, payload) => ({ ...state, nowTimestamp: payload }))
@@ -69,73 +74,79 @@ const doRequestNotificationPermission = async (dispatch: Redux.Dispatch) => {
   dispatch(requestNotificationPermission.done({ result: perm }));
 };
 
-const reducer = Redux.combineReducers({
-  timer: timerReducer,
-  form: ReduxForm.reducer
-});
+const createRootReducer = (history: History.History) =>
+  Redux.combineReducers({
+    router: ConnectedReactRouter.connectRouter(history),
+    timer: timerReducer
+  });
 
-// ■ Store
+// ## Store
 
 const browserHistory = History.createBrowserHistory({ basename: baseURLPath });
 
-// Redux Devtools を使う
-// tslint:disable-next-line:no-any
-const composeEnhancers: typeof Redux.compose = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || Redux.compose;
+// Redux Devtools
+declare global {
+  interface Window {
+    __REDUX_DEVTOOLS_EXTENSION_COMPOSE__: typeof Redux.compose;
+  }
+}
+
+const composeEnhancers =
+  (process.env.NODE_ENV === "development" && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) || Redux.compose;
 
 const store = Redux.createStore(
-  ConnectedReactRouter.connectRouter(browserHistory)(reducer),
+  createRootReducer(browserHistory),
   composeEnhancers(Redux.applyMiddleware(ConnectedReactRouter.routerMiddleware(browserHistory)))
 );
 
-// ■ Components / Containers
+// ## Components
 
-// TimerFormComponent / Container
+// ### TimerForm
 
 type TimerFormData = {
-  targetTimeString?: string; // form から取得するパラメータ (redux-form)
-};
-type TimerFormOwnProps = {};
-type TimerFormStateProps = {
-  initialValues?: TimerFormData; // (redux-form)
+  targetTimeString: string; // form から取得するパラメータ (formik)
 };
 type TimerFormDispatchProps = {
-  onSubmit(formData: TimerFormData): void; // (redux-form)
+  dispatch: Redux.Dispatch;
 };
-type TimerFormMergedProps = TimerFormOwnProps & TimerFormStateProps & TimerFormDispatchProps;
-type TimerFormInjectedFormProps = ReduxForm.InjectedFormProps<TimerFormData, {}>;
-type TimerFormProps = TimerFormMergedProps & TimerFormInjectedFormProps;
+type TimerFormMergedProps = TimerFormDispatchProps;
+type TimerFormInjectedFormikProps = Formik.InjectedFormikProps<TimerFormMergedProps, TimerFormData>;
+type TimerFormProps = TimerFormMergedProps & TimerFormInjectedFormikProps;
 
-const TimerFormComponent = ({ handleSubmit }: TimerFormProps) => (
-  <form onSubmit={handleSubmit}>
+const TimerFormComponent = ({  }: TimerFormProps) => (
+  <Formik.Form>
     <ul style={{ listStyleType: "none" }}>
       <li>
-        <ReduxForm.Field component="input" type="text" name="targetTimeString" style={{ width: 300 }} />
+        <Formik.Field type="text" name="targetTimeString" style={{ width: 300 }} />
       </li>
       <li>
-        <button style={{ width: 300 }}>Create URL Timer</button>
+        <button type="submit" style={{ width: 300 }}>
+          Create Timer
+        </button>
       </li>
     </ul>
-  </form>
+  </Formik.Form>
 );
 
 const TimerFormContainer = Recompose.compose<TimerFormProps, {}>(
-  ReactRedux.connect(
-    (_state: State): TimerFormStateProps => ({ initialValues: { targetTimeString: luxon.DateTime.local().toISO() } }),
-    (dispatch: Redux.Dispatch): TimerFormDispatchProps => ({
-      onSubmit(formData: TimerFormData) {
-        if (formData.targetTimeString != null) {
-          const unix = Math.floor(convertStringToTimestamp(formData.targetTimeString) / 1000);
-          if (!isNaN(unix)) {
-            dispatch(ConnectedReactRouter.push(`/${unix}`));
-          }
-        }
-      }
-    })
+  ReactRedux.connect<{}, TimerFormDispatchProps, {}, State>(
+    _state => ({}),
+    dispatch => ({ dispatch })
   ),
-  ReduxForm.reduxForm({ form: "timerFormContainer" })
+  Formik.withFormik<TimerFormMergedProps, TimerFormData>({
+    mapPropsToValues: _props => ({ targetTimeString: convertTimestampToString(getNow()) }),
+    handleSubmit: (formData, { props: { dispatch } }) => {
+      const unixTime = Math.floor(convertStringToTimestamp(formData.targetTimeString) / 1000);
+      if (!isNaN(unixTime)) {
+        dispatch(ConnectedReactRouter.push(`/${unixTime}`));
+      }
+    }
+  })
 )(TimerFormComponent);
 
-// TimerViewComponent / Container
+// ### TimerView
+
+// #### Types
 
 type TimerViewPathParams = {
   targetTimeString: string; // URL (Path) から取得するパラメータ (react-router)
@@ -160,17 +171,19 @@ type TimerViewMergedProps = TimerViewOwnProps & TimerViewStateProps & TimerViewD
 type TimerViewInjectedStateProps = Recompose.stateProps<number | undefined, "timerId", "setTimerId">;
 type TimerViewProps = TimerViewMergedProps & TimerViewInjectedStateProps;
 
+// #### Component
+
 const TimerViewComponent = ({ targetTimestamp, duration, targetTimeString }: TimerViewProps) => {
   if (isNaN(targetTimestamp)) {
     return <ReactRouterDOM.Link to="/">Reset</ReactRouterDOM.Link>;
   }
   return (
     <div style={{ textAlign: "center" }}>
-      <h1>{targetTimeString}</h1>
-      <h2>
+      <h1>
         {convertDurationToString(duration)}
         <span style={{ fontSize: "80%" }}>{duration >= 0 ? " (left)" : " (ago)"}</span>
-      </h2>
+      </h1>
+      <h2>{targetTimeString}</h2>
       <div style={{ marginTop: 5 }}>
         <ReactRouterDOM.Link to="/">Reset</ReactRouterDOM.Link>
       </div>
@@ -178,6 +191,9 @@ const TimerViewComponent = ({ targetTimestamp, duration, targetTimeString }: Tim
   );
 };
 
+// #### Container
+
+// ##### Properties
 const TimerViewContainer = Recompose.compose<TimerViewProps, {}>(
   ReactRouterDOM.withRouter,
   ReactRedux.connect(
@@ -214,6 +230,7 @@ const TimerViewContainer = Recompose.compose<TimerViewProps, {}>(
       };
     }
   ),
+  // ##### State / Lifecycle
   Recompose.withState("timerId", "setTimerId", void 0),
   Recompose.lifecycle<TimerViewProps, {}>({
     componentDidMount() {
@@ -229,7 +246,7 @@ const TimerViewContainer = Recompose.compose<TimerViewProps, {}>(
   })
 )(TimerViewComponent);
 
-// App
+// ## Router
 
 const App = () => (
   <ReactRedux.Provider store={store}>

@@ -1,0 +1,32 @@
+{
+    "name": "url-timer-vue",
+    "author": "ikasat",
+    "license": "Apache-2.0",
+    "scripts": {
+        "start": "parcel serve --public-url /url-timer/ src/index.html",
+        "build": "parcel build --public-url /url-timer/ src/index.html",
+        "tsc": "tsc --build tsconfig.json"
+    },
+    "dependencies": {
+        "history": "^4.7.2",
+        "luxon": "^1.8.2",
+        "vue": "^2.5.21",
+        "vue-router": "^3.0.2",
+        "vuex": "^3.0.1",
+        "vuex-router-sync": "^5.0.0"
+    },
+    "devDependencies": {
+        "@types/history": "^4.7.2",
+        "@types/luxon": "^1.4.1",
+        "parcel-bundler": "^1.11.0",
+        "prettier": "^1.15.3",
+        "tslint": "^5.12.0",
+        "tslint-config-prettier": "^1.17.0",
+        "tslint-plugin-prettier": "^2.0.1",
+        "tslint-react": "^3.6.0",
+        "typescript": "^3.2.2"
+    },
+    "alias": {
+        "vue" : "./node_modules/vue/dist/vue.common.js"
+    }
+}

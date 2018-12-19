@@ -1,8 +1,6 @@
 {
     "compilerOptions": {
-        "jsx": "react",
         "lib": [
-            "dom",
             "es2017"
         ],
         "moduleResolution": "node",
