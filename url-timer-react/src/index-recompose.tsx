@@ -191,7 +191,8 @@ type TimerViewComputedProps = {
   duration: number
 }
 type TimerViewMergedProps = TimerViewOwnProps & TimerViewStateProps & TimerViewDispatchProps & TimerViewComputedProps
-type TimerViewAllProps = TimerViewMergedProps
+type TimerViewInjectedStateProps = Recompose.stateProps<number | undefined, 'timerId', 'setTimerId'>
+type TimerViewAllProps = TimerViewMergedProps & TimerViewInjectedStateProps
 
 // ##### Properties
 
@@ -224,30 +225,23 @@ const TimerViewContainer = Recompose.compose<TimerViewAllProps, {}>(
         duration
       }
     }
-  )
-)(
-  // ##### Lifecycle
-  class extends React.Component<TimerViewAllProps> {
-    timerId?: number
-
+  ),
+  // ##### State / Lifecycle
+  Recompose.withState('timerId', 'setTimerId', undefined),
+  Recompose.lifecycle<TimerViewAllProps, {}>({
     componentDidMount() {
-      const { dispatch, targetTimestamp } = this.props
+      const { setTimerId, dispatch, targetTimestamp } = this.props
       const onTick = () => dispatch(setNowTimestamp(getNow()))
-      this.timerId = window.setInterval(onTick, 500)
+      setTimerId(window.setInterval(onTick, 500))
       onTick()
       dispatch(setNotificationEnabled(targetTimestamp > getNow()))
       doRequestNotificationPermission(dispatch)
-    }
-
+    },
     componentWillUnmount() {
-      clearInterval(this.timerId)
+      clearInterval(this.props.timerId)
     }
-
-    render() {
-      return <TimerViewComponent {...this.props} />
-    }
-  }
-)
+  })
+)(TimerViewComponent)
 
 // ## Router
 

@@ -153,26 +153,24 @@ const TimerView = Vue.extend({
       return convertDurationToString(this.duration)
     }
   },
-  // ##### Methods / Lifecycle
-  methods: {
-    onTick() {
-      const now = getNow()
+  watch: {
+    nowTimestamp(newNowTimestamp: number) {
       const { notificationEnabled, notificationPermisson } = this.storeState.timer
-      if (notificationEnabled && now >= this.targetTimestamp) {
+      if (notificationEnabled && newNowTimestamp >= this.targetTimestamp) {
         if (notificationPermisson === 'granted') {
           const _notif = new Notification(this.targetTimeString)
         }
         this.$store.commit(setNotificationEnabled, false)
       }
-      this.$store.commit(setNowTimestamp, now)
     }
   },
   data: () => ({
     timerId: undefined as number | undefined
   }),
   mounted() {
-    this.timerId = window.setInterval(this.onTick.bind(this), 500)
-    this.onTick()
+    const onTick = () => this.$store.commit(setNowTimestamp, getNow())
+    this.timerId = window.setInterval(onTick, 500)
+    onTick()
     this.$store.commit(setNotificationEnabled, this.targetTimestamp > getNow())
     this.$store.dispatch(requestNotificationPermission)
   },

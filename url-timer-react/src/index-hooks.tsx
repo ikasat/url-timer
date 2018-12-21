@@ -225,29 +225,18 @@ const TimerViewContainer = Recompose.compose<TimerViewAllProps, {}>(
       }
     }
   )
-)(
-  // ##### Lifecycle
-  class extends React.Component<TimerViewAllProps> {
-    timerId?: number
-
-    componentDidMount() {
-      const { dispatch, targetTimestamp } = this.props
-      const onTick = () => dispatch(setNowTimestamp(getNow()))
-      this.timerId = window.setInterval(onTick, 500)
-      onTick()
-      dispatch(setNotificationEnabled(targetTimestamp > getNow()))
-      doRequestNotificationPermission(dispatch)
-    }
-
-    componentWillUnmount() {
-      clearInterval(this.timerId)
-    }
-
-    render() {
-      return <TimerViewComponent {...this.props} />
-    }
-  }
-)
+)((props: TimerViewAllProps) => {
+  React.useEffect(() => {
+    const { dispatch, targetTimestamp } = props
+    const onTick = () => dispatch(setNowTimestamp(getNow()))
+    const timerId = window.setInterval(onTick, 500)
+    onTick()
+    dispatch(setNotificationEnabled(targetTimestamp > getNow()))
+    doRequestNotificationPermission(dispatch)
+    return () => clearInterval(timerId)
+  }, [])
+  return <TimerViewComponent {...props} />
+})
 
 // ## Router
 
