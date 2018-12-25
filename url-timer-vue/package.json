@@ -8,6 +8,7 @@
         "tsc": "tsc --build tsconfig.json"
     },
     "dependencies": {
+        "core-js": "^2.6.1",
         "history": "^4.7.2",
         "luxon": "^1.8.2",
         "vue": "^2.5.21",
@@ -16,6 +17,9 @@
         "vuex-router-sync": "^5.0.0"
     },
     "devDependencies": {
+        "@babel/core": "^7.2.2",
+        "@babel/plugin-transform-runtime": "^7.2.0",
+        "@babel/preset-env": "^7.2.3",
         "@types/history": "^4.7.2",
         "@types/luxon": "^1.4.1",
         "parcel-bundler": "^1.11.0",
@@ -27,6 +31,6 @@
         "typescript": "^3.2.2"
     },
     "alias": {
-        "vue" : "./node_modules/vue/dist/vue.common.js"
+        "vue": "./node_modules/vue/dist/vue.common.js"
     }
 }

@@ -1,5 +1,7 @@
 // ## import
 
+import '@babel/polyfill'
+
 import Vue from 'vue'
 import VueRouter, { Route } from 'vue-router'
 import * as Vuex from 'vuex'
