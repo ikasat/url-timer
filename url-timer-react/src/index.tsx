@@ -16,7 +16,7 @@ import * as luxon from 'luxon'
 
 // ## Utilities
 
-const baseURLPath = '/url-timer/'
+const baseURLPath = '/url-timer/react/'
 
 const convertStringToTimestamp = (s: string) =>
   s.match(/^\d+$/) != null ? +s * 1000 : luxon.DateTime.fromISO(s).toMillis()

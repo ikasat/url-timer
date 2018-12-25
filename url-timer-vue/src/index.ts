@@ -11,7 +11,7 @@ Vue.use(Vuex)
 
 // ## Utilities
 
-const baseURLPath = '/url-timer/'
+const baseURLPath = '/url-timer/vue/'
 
 const convertStringToTimestamp = (s: string) =>
   s.match(/^\d+$/) != null ? +s * 1000 : luxon.DateTime.fromISO(s).toMillis()
