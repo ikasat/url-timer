@@ -3,8 +3,8 @@
     "author": "ikasat",
     "license": "Apache-2.0",
     "scripts": {
-        "start": "parcel serve --public-url /url-timer/ src/index.html",
-        "build": "parcel build --public-url /url-timer/ src/index.html",
+        "start": "parcel serve --public-url /url-timer/react/ src/index.html",
+        "build": "rm -f dist/*; parcel build --public-url /url-timer/react/ src/index.html",
         "tsc": "tsc --build tsconfig.json"
     },
     "dependencies": {
